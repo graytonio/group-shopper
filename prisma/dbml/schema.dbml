@@ -1,0 +1,103 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Item {
+  id String [pk]
+  lists ItemInList [not null]
+  name String [unique, not null]
+}
+
+Table List {
+  id String [pk]
+  name String [unique, not null]
+  ownerId String [not null]
+  owner User [not null]
+  users User [not null]
+  items ItemInList [not null]
+}
+
+Table ItemInList {
+  itemId String [not null]
+  item Item [not null]
+  listId String [not null]
+  list List [not null]
+  addedAt DateTime [default: `now()`, not null]
+  purchased Boolean [not null, default: false]
+  quantity Int [not null, default: 1]
+  size String
+  assignedId String [not null]
+  assigned User [not null]
+
+  indexes {
+    (itemId, listId) [pk]
+  }
+}
+
+Table Account {
+  id String [pk]
+  userId String [not null]
+  type String [not null]
+  provider String [not null]
+  providerAccountId String [not null]
+  refresh_token String
+  access_token String
+  expires_at Int
+  token_type String
+  scope String
+  id_token String
+  session_state String
+  user User [not null]
+
+  indexes {
+    (provider, providerAccountId) [unique]
+  }
+}
+
+Table Session {
+  id String [pk]
+  sessionToken String [unique, not null]
+  userId String [not null]
+  expires DateTime [not null]
+  user User [not null]
+}
+
+Table User {
+  id String [pk]
+  name String
+  email String [unique]
+  emailVerified DateTime
+  image String
+  accounts Account [not null]
+  sessions Session [not null]
+  lists List [not null]
+  ownedLists List [not null]
+  assignedItems ItemInList [not null]
+}
+
+Table VerificationToken {
+  identifier String [not null]
+  token String [unique, not null]
+  expires DateTime [not null]
+
+  indexes {
+    (identifier, token) [unique]
+  }
+}
+
+Table lists {
+  usersId String [ref: > User.id]
+  listsId String [ref: > List.id]
+}
+
+Ref: List.ownerId > User.id
+
+Ref: ItemInList.itemId > Item.id
+
+Ref: ItemInList.listId > List.id
+
+Ref: ItemInList.assignedId > User.id
+
+Ref: Account.userId > User.id [delete: Cascade]
+
+Ref: Session.userId > User.id [delete: Cascade]

@@ -3,19 +3,47 @@
 
 generator client {
     provider = "prisma-client-js"
+    previewFeatures = ["referentialIntegrity"]
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
 }
 
 datasource db {
-    provider = "sqlite"
-    // NOTE: When using postgresql, mysql or sqlserver, uncomment the @db.text annotations in model Account below
-    // Further reading: 
-    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+    provider = "mysql"
+    referentialIntegrity = "prisma"
     url      = env("DATABASE_URL")
 }
 
-model Example {
-    id String @id @default(cuid())
+model Item {
+    id String       @id @default(cuid())
+    lists ItemInList[]
+    name String     @unique
+}
+
+model List {
+    id String           @id @default(cuid())
+    name String         @unique
+    ownerId String
+    owner User          @relation("owned-lists", fields: [ownerId], references: [id])
+    users User[]        @relation("lists")
+    items ItemInList[]
+}
+
+model ItemInList {
+    itemId String
+    item Item           @relation(fields: [itemId], references: [id])
+    listId String       
+    list List           @relation(fields: [listId], references: [id])
+    addedAt DateTime    @default(now())
+    purchased Boolean   @default(false)
+    quantity Int    @default(1)
+    size String?    @db.Text
+    assignedId String
+    assigned User       @relation(fields: [assignedId], references: [id])
+
+    @@id([itemId, listId])
 }
 
 // Necessary for Next auth
@@ -25,12 +53,12 @@ model Account {
     type              String
     provider          String
     providerAccountId String
-    refresh_token     String? //@db.Text
-    access_token      String? //@db.Text
+    refresh_token     String? @db.Text
+    access_token      String? @db.Text
     expires_at        Int?
     token_type        String?
     scope             String?
-    id_token          String? //@db.Text
+    id_token          String? @db.Text
     session_state     String?
     user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -53,6 +81,9 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
+    lists         List[] @relation("lists")
+    ownedLists    List[] @relation("owned-lists")
+    assignedItems ItemInList[]
 }
 
 model VerificationToken {
